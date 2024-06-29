@@ -7,7 +7,9 @@ def create_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="@kklsajcHA*_31",
+
+        # enter your own password here
+        password="password",
         database="MovieCatalogDB"
     )
 
@@ -50,8 +52,8 @@ class MovieDatabaseApp:
         search_button.grid(row=0, column=3, padx=10, pady=10)
 
         self.tree = ttk.Treeview(self.root,
-                                 columns=("ID", "Title", "Year", "Time", "Language", "Release Date", "Country"),
-                                 show='headings')
+                                columns=("ID", "Title", "Year", "Time", "Language", "Release Date", "Country", "Additional Info"),
+                                show='headings')
         self.tree.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
 
         self.tree.heading("ID", text="ID")
@@ -61,6 +63,7 @@ class MovieDatabaseApp:
         self.tree.heading("Language", text="Language")
         self.tree.heading("Release Date", text="Release Date")
         self.tree.heading("Country", text="Country")
+        self.tree.heading("Additional Info", text="Additional Info")
 
         self.tree.column("ID", width=50)
         self.tree.column("Title", width=200)
@@ -69,6 +72,8 @@ class MovieDatabaseApp:
         self.tree.column("Language", width=100)
         self.tree.column("Release Date", width=150)
         self.tree.column("Country", width=100)
+        self.tree.column("Additional Info", width=200)
+
 
     def search(self):
         search_type = self.search_var.get()
@@ -77,14 +82,15 @@ class MovieDatabaseApp:
             messagebox.showerror("Input Error", "Please enter a search term")
             return
 
+        cursor = self.conn.cursor()
         if search_type == "Year":
             if not search_term.isdigit():
                 messagebox.showerror("Input Error", "Please enter a valid year (numbers only)")
                 return
-            query = f"SELECT * FROM movie WHERE mov_year = {search_term}"
+            query = f"SELECT m.*, '' as additional_info FROM movie m WHERE m.mov_year = {search_term}"
         elif search_type == "Genre":
             query = f"""
-                SELECT m.*
+                SELECT m.*, g.gen_title as additional_info
                 FROM movie m
                 JOIN movie_genres mg ON m.mov_id = mg.mov_id
                 JOIN genres g ON mg.gen_id = g.gen_id
@@ -92,7 +98,7 @@ class MovieDatabaseApp:
             """
         elif search_type == "Actor":
             query = f"""
-                SELECT m.*
+                SELECT m.*, CONCAT(a.act_fname, ' ', a.act_lname) as additional_info
                 FROM movie m
                 JOIN movie_cast mc ON m.mov_id = mc.mov_id
                 JOIN actor a ON mc.act_id = a.act_id
@@ -103,7 +109,7 @@ class MovieDatabaseApp:
                 messagebox.showerror("Input Error", "Please enter a valid age (numbers only)")
                 return
             query = f"""
-                SELECT m.*
+                SELECT m.*, CONCAT(a.act_fname, ' ', a.act_lname) as additional_info
                 FROM movie m
                 JOIN movie_cast mc ON m.mov_id = mc.mov_id
                 JOIN actor a ON mc.act_id = a.act_id
@@ -111,7 +117,7 @@ class MovieDatabaseApp:
             """
         elif search_type == "Nationality":
             query = f"""
-                SELECT m.*
+                SELECT m.*, CONCAT(a.act_fname, ' ', a.act_lname) as additional_info
                 FROM movie m
                 JOIN movie_cast mc ON m.mov_id = mc.mov_id
                 JOIN actor a ON mc.act_id = a.act_id
@@ -119,16 +125,15 @@ class MovieDatabaseApp:
             """
         elif search_type == "Director":
             query = f"""
-                SELECT m.*
+                SELECT m.*, CONCAT(d.dir_fname, ' ', d.dir_lname) as additional_info
                 FROM movie m
                 JOIN movie_direction md ON m.mov_id = md.mov_id
                 JOIN director d ON md.dir_id = d.dir_id
                 WHERE d.dir_fname = '{search_term}' OR d.dir_lname = '{search_term}'
             """
         elif search_type == "Country":
-            query = f"SELECT * FROM movie WHERE mov_rel_country = '{search_term}'"
+            query = f"SELECT m.*, '' as additional_info FROM movie m WHERE m.mov_rel_country = '{search_term}'"
 
-        cursor = self.conn.cursor()
         cursor.execute(query)
         results = cursor.fetchall()
 
