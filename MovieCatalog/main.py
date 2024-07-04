@@ -40,7 +40,7 @@ class MovieDatabaseApp:
         ttk.Label(self.root, text="Search by:").grid(row=0, column=0, padx=10, pady=10)
 
         self.search_var = tk.StringVar()
-        search_options = ["Year", "Genre", "Actor", "Director", "Country", "Age", "Nationality"]
+        search_options = ["Year", "Genre", "Actor", "Director", "Country", "Age", "Nationality", "Rating"]
         self.search_combobox = ttk.Combobox(self.root, textvariable=self.search_var, values=search_options)
         self.search_combobox.grid(row=0, column=1, padx=10, pady=10)
         self.search_combobox.current(0)
@@ -133,7 +133,16 @@ class MovieDatabaseApp:
             """
         elif search_type == "Country":
             query = f"SELECT m.*, '' as additional_info FROM movie m WHERE m.mov_rel_country = '{search_term}'"
-
+        elif search_type == "Rating":
+            if not search_term.isdigit():
+                messagebox.showerror("Input Error", "Please enter a valid rating (numbers only)")
+                return
+            query = f"""
+                SELECT m.*, r.rev_stars as additional_info
+                FROM movie m
+                JOIN rating r ON m.mov_id = r.mov_id
+                WHERE r.rev_stars = '{search_term}'
+            """  
         cursor.execute(query)
         results = cursor.fetchall()
 
